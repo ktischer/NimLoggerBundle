@@ -24,17 +24,17 @@ The update/install your dependencies, using the Symfony bin/vendors script.
 
 ### Configuration
 
-* Register the bundle in AppKernel.php
+Register the bundle in AppKernel.php
 
     $bundles[] = new Nim\SF2\LoggerBundle\NimLoggerBundle();
     
 
-* Configure autoload.php's registerNamespaces
+Configure autoload.php's registerNamespaces
 
     'Nim' => __DIR__.'/../vendor/bundles'
     
     
-* Configure your graylog server in config.yml
+Configure your graylog server in config.yml
 
 _Note:_ I strongly recommend you use an IP address and not a hostname.
 
