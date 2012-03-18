@@ -20,16 +20,19 @@ Add the following code to your _deps_ file
 The update/install your dependencies, using the Symfony bin/vendors script.
 
     php bin/vendors install
+    
 
 ### Configuration
 
 * Register the bundle in AppKernel.php
 
     $bundles[] = new Nim\SF2\LoggerBundle\NimLoggerBundle();
+    
 
 * Configure autoload.php's registerNamespaces
 
     'Nim' => __DIR__.'/../vendor/bundles'
+    
     
 * Configure your graylog server in config.yml
 
