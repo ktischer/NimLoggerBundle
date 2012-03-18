@@ -3,7 +3,7 @@
     "type": "library",
     "description": "A Symfony bundle for a simple Graylog2 error logger",
     "keywords": ["logger","errors","graylog"],
-    "version": "0.1",
+    "version": "0.2",
     "license": "Beerware",
     "authors": [
         {

@@ -1,59 +1,60 @@
 <?php
+
 /**
  * Taken from https://github.com/Graylog2/gelf-php
  *
  * Copyright (c) 2010-2012 Lennart Koopmann
  *
  * Permission is hereby granted, free of charge, to any person obtaining
- *  a copy of this software and associated documentation files (the
- *  "Software"), to deal in the Software without restriction, including
- *  without limitation the rights to use, copy, modify, merge, publish,
- *  distribute, sublicense, and/or sell copies of the Software, and to
- *  permit persons to whom the Software is furnished to do so, subject to
- *  the following conditions:
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
  *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
  *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 class GELFMessagePublisher {
 	/**
 	 * @var integer
 	 */
 	const CHUNK_SIZE_WAN = 1420;
-
+	
 	/**
 	 * @var integer
 	 */
 	const CHUNK_SIZE_LAN = 8154;
-
+	
 	/**
 	 * @var integer
 	 */
 	const GRAYLOG2_DEFAULT_PORT = 12201;
-
+	
 	/**
 	 * @var string
 	 */
 	const GRAYLOG2_PROTOCOL_VERSION = '1.0';
-
+	
 	/**
 	 * @var string
 	 */
 	protected $hostname = null;
-
+	
 	/**
 	 * @var integer
 	 */
 	protected $port = null;
-
+	
 	/**
 	 * @var integer
 	 */
@@ -69,18 +70,18 @@ class GELFMessagePublisher {
 	 */
 	public function __construct($hostname, $port = self::GRAYLOG2_DEFAULT_PORT, $chunkSize = self::CHUNK_SIZE_WAN) {
 		// Check whether the parameters are set correctly
-		if (! $hostname) {
+		if(!$hostname) {
 			throw new InvalidArgumentException('$hostname must be set');
 		}
-
-		if (! is_numeric($port)) {
+		
+		if(!is_numeric($port)) {
 			throw new InvalidArgumentException('$port must be an integer');
 		}
-
-		if (! is_numeric($chunkSize)) {
+		
+		if(!is_numeric($chunkSize)) {
 			throw new InvalidArgumentException('$chunkSize must be an integer');
 		}
-
+		
 		$this->hostname = $hostname;
 		$this->port = $port;
 		$this->chunkSize = $chunkSize;
@@ -95,49 +96,49 @@ class GELFMessagePublisher {
 	 */
 	public function publish(GELFMessage $message) {
 		// Check if required message parameters are set
-		if (! $message->getShortMessage() || ! $message->getHost()) {
+		if(!$message->getShortMessage() || !$message->getHost()) {
 			throw new UnexpectedValueException('Missing required data parameter: "version", "short_message" and "host" are required.');
 		}
-
+		
 		// Set Graylog protocol version
 		$message->setVersion(self::GRAYLOG2_PROTOCOL_VERSION);
-
+		
 		// Encode the message as json string and compress it using gzip
 		$preparedMessage = $this->getPreparedMessage($message);
-
+		
 		// Open a udp connection to graylog server
 		$socket = $this->getSocketConnection();
-
+		
 		// Several udp writes are required to publish the message
-		if ($this->isMessageSizeGreaterChunkSize($preparedMessage)) {
+		if($this->isMessageSizeGreaterChunkSize($preparedMessage)) {
 			// A unique id which consists of the microtime and a random value
 			$messageId = $this->getMessageId();
-
+			
 			// Split the message into chunks
 			$messageChunks = $this->getMessageChunks($preparedMessage);
 			$messageChunksCount = count($messageChunks);
-
+			
 			// Send chunks to graylog server
-			foreach (array_values($messageChunks) as $messageChunkIndex => $messageChunk) {
+			foreach(array_values($messageChunks) as $messageChunkIndex => $messageChunk) {
 				$bytesWritten = $this->writeMessageChunkToSocket($socket, $messageId, $messageChunk, $messageChunkIndex, $messageChunksCount);
-
-				if (false === $bytesWritten) {
+				
+				if(false === $bytesWritten) {
 					// Abort due to write error
 					return false;
 				}
 			}
 		} else {
 			// A single write is enough to get the message published
-			if (false === $this->writeMessageToSocket($socket, $preparedMessage)) {
+			if(false === $this->writeMessageToSocket($socket, $preparedMessage)) {
 				// Abort due to write error
 				return false;
 			}
 		}
-
+		
 		// This increases stability a lot if messages are sent in a loop
 		// A value of 20 means 0.02 ms
 		usleep(20);
-
+		
 		// Message successful sent
 		return true;
 	}
@@ -189,22 +190,22 @@ class GELFMessagePublisher {
 	 * @return string
 	 */
 	protected function prependChunkInformation($messageId, $data, $sequence, $sequenceSize) {
-		if (! is_string($data) || $data === '') {
+		if(!is_string($data) || $data === '') {
 			throw new InvalidArgumentException('Data must be a string and not be empty.');
 		}
-
-		if (! is_integer($sequence) || ! is_integer($sequenceSize)) {
+		
+		if(!is_integer($sequence) || !is_integer($sequenceSize)) {
 			throw new InvalidArgumentException('Sequence number and size must be integer.');
 		}
-
-		if ($sequenceSize <= 0) {
+		
+		if($sequenceSize <= 0) {
 			throw new InvalidArgumentException('Sequence size must be greater than 0.');
 		}
-
-		if ($sequence > $sequenceSize) {
+		
+		if($sequence > $sequenceSize) {
 			throw new InvalidArgumentException('Sequence size must be greater than sequence number.');
 		}
-
+		
 		return pack('CC', 30, 15) . substr(md5($messageId, true), 0, 8) . pack('CC', $sequence, $sequenceSize) . $data;
 	}
 

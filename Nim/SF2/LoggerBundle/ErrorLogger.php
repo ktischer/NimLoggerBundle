@@ -1,6 +1,8 @@
 <?php
 
 namespace Nim\SF2\LoggerBundle;
+
+use Symfony\Component\DependencyInjection\Container;
 use Nim\SF2\LoggerBundle\Logger;
 use Nim\SF2\LoggerBundle\Gelf\GELFLogger;
 
@@ -18,15 +20,15 @@ class ErrorLogger {
 	 * Get ready to log!
 	 * @param array $gelfServer optional ip address of the graylog2 server, only required when using the GELF implementation
 	 */
-	public static function init($gelfServer = '') {
+	public static function init(Container $container) {
 		if(!self::$loggerImpl) {
-			require_once 'gelf/GELFLogger.php';
-			self::$loggerImpl = new GELFLogger($gelfServer);
+			require_once __DIR__ . '/Gelf/GELFLogger.php';
+			self::$loggerImpl = new GELFLogger($container);
 		}
 		
-		set_error_handler(array('Nim\Logger\ErrorLogger', 'handleErrors'), (E_ALL | E_STRICT) ^ E_NOTICE);
-		set_exception_handler(array('Nim\Logger\ErrorLogger', 'handleExceptions'));
-		register_shutdown_function(array('Nim\Logger\ErrorLogger', 'shutdownErrorHandler'));
+		set_error_handler(array('Nim\SF2\LoggerBundle\ErrorLogger', 'handleErrors'), (E_ALL | E_STRICT) ^ E_NOTICE);
+		set_exception_handler(array('Nim\SF2\LoggerBundle\ErrorLogger', 'handleExceptions'));
+		register_shutdown_function(array('Nim\SF2\LoggerBundle\ErrorLogger', 'shutdownErrorHandler'));
 	}
 
 	/**
@@ -51,7 +53,7 @@ class ErrorLogger {
 	/**
 	 * Uncaught exception handler.
 	 */
-	public static function handleExceptions(Exception $exception) {
+	public static function handleExceptions(\Exception $exception) {
 		self::handleError(Logger::ERROR, 'Uncaught Exception: ' . $exception->getMessage(), $exception->getFile(), $exception->getLine(), $exception->getTraceAsString());
 	}
 
