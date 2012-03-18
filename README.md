@@ -45,9 +45,10 @@ All done!
 
 ## TODO
 
- * More documentation
- * Some cleanup
- * Dust off the unit tests and add them to the SF2 code
+ * More documentation.
+ * Some cleanup.
+ * Dust off the unit tests and add them to the SF2 code.
+ * Improve packaging, directory structure is just nasty.
 
 ## Questions?
 
