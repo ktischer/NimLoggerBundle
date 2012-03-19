@@ -14,7 +14,7 @@ Add the following code to your _deps_ file
 
     [NimLoggerBundle]
         git=git://github.com/Nimlhug/NimLoggerBundle.git
-        target=/bundles/Nim/LoggerBundle
+        target=/bundles/Nim/SF2/LoggerBundle
         version=v0.2
 
 The update/install your dependencies, using the Symfony bin/vendors script.
